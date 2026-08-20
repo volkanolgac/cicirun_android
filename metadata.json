@@ -1,0 +1,7 @@
+{
+  "name": "CiCi Run",
+  "description": "An endless runner arcade mobile game featuring Cici dodging obstacles, collecting stars, and unlocking high-score achievements.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

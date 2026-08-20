@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">CiCi Run</string>
+    <string name="game_title">CiCi Run</string>
+    <string name="play">OYNA</string>
+    <string name="pause">Durdur</string>
+    <string name="resume">Devam Et</string>
+    <string name="restart">Yeniden Başla</string>
+    <string name="game_over">OYUN BİTTİ</string>
+    <string name="score">Skor</string>
+    <string name="high_score">En Yüksek Skor</string>
+    <string name="coins">Yıldızlar</string>
+    <string name="distance">Mesafe</string>
+    <string name="jump">Zıpla</string>
+    <string name="slide">Kay</string>
+    <string name="new_best">YENİ REKOR!</string>
+    <string name="sound_effects">Ses Efektleri</string>
+    <string name="haptics">Titreşim</string>
+    <string name="main_menu">Ana Menü</string>
+    <string name="character_select">Karakter</string>
+    <string name="how_to_play">Nasıl Oynanır?</string>
+</resources>
+
