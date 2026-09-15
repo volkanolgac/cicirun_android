@@ -40,6 +40,7 @@ enum class CharacterSpecies {
 data class CharacterSkin(
     val id: String,
     val name: String,
+    val enName: String = name,
     val emoji: String,
     val species: CharacterSpecies,
     val bodyColor: Long,
@@ -47,12 +48,15 @@ data class CharacterSkin(
     val detailColor: Long,    // beakColor or noseColor or hornColor
     val accentColor: Long,    // headbandColor or collarColor or spineColor
     val unlockCoins: Int
-)
+) {
+    fun localizedName(lang: String): String = if (lang == "en") enName else name
+}
 
 val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "classic_cici",
         name = "Civciv Cici",
+        enName = "Cici Chick",
         emoji = "🐥",
         species = CharacterSpecies.CHICK,
         bodyColor = 0xFFFFD129,
@@ -64,6 +68,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "blue_robin",
         name = "Maviş Kuş",
+        enName = "Blue Robin",
         emoji = "🐦",
         species = CharacterSpecies.CHICK,
         bodyColor = 0xFF38BDF8,
@@ -75,6 +80,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "bunny_pamuk",
         name = "Tavşan Pamuk",
+        enName = "Cotton Bunny",
         emoji = "🐰",
         species = CharacterSpecies.BUNNY,
         bodyColor = 0xFFFFF1F2,
@@ -86,6 +92,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "kitty_tekir",
         name = "Kedi Tekir",
+        enName = "Tabby Kitty",
         emoji = "🐱",
         species = CharacterSpecies.CAT,
         bodyColor = 0xFFFB923C,
@@ -97,6 +104,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "panda_bambu",
         name = "Panda Bambu",
+        enName = "Bamboo Panda",
         emoji = "🐼",
         species = CharacterSpecies.PANDA,
         bodyColor = 0xFFF8FAFC,
@@ -108,6 +116,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "puppy_karamel",
         name = "Köpek Karamel",
+        enName = "Caramel Pup",
         emoji = "🐶",
         species = CharacterSpecies.DOG,
         bodyColor = 0xFFD97706,
@@ -119,6 +128,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "fox_tilki",
         name = "Kızıl Tilki",
+        enName = "Red Fox",
         emoji = "🦊",
         species = CharacterSpecies.FOX,
         bodyColor = 0xFFF97316,
@@ -130,6 +140,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "frog_vakvak",
         name = "Kurbağa Vakvak",
+        enName = "Froggy Croak",
         emoji = "🐸",
         species = CharacterSpecies.FROG,
         bodyColor = 0xFF4ADE80,
@@ -141,6 +152,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "bear_bal",
         name = "Bal Ayısı",
+        enName = "Honey Bear",
         emoji = "🐻",
         species = CharacterSpecies.BEAR,
         bodyColor = 0xFFB45309,
@@ -152,6 +164,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "penguin_pingu",
         name = "Penguen Pingu",
+        enName = "Penguin Pingu",
         emoji = "🐧",
         species = CharacterSpecies.PENGUIN,
         bodyColor = 0xFF1E293B,
@@ -163,6 +176,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "dragon_ejder",
         name = "Minik Ejderha",
+        enName = "Little Dragon",
         emoji = "🐲",
         species = CharacterSpecies.DRAGON,
         bodyColor = 0xFF2DD4BF,
@@ -174,6 +188,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "unicorn_yildiz",
         name = "Sihirli Unicorn",
+        enName = "Magic Unicorn",
         emoji = "🦄",
         species = CharacterSpecies.UNICORN,
         bodyColor = 0xFFF0ABFC,
@@ -185,6 +200,7 @@ val AVAILABLE_SKINS = listOf(
     CharacterSkin(
         id = "ninja_shadow",
         name = "Gölge Ninja",
+        enName = "Shadow Ninja",
         emoji = "🥷",
         species = CharacterSpecies.CHICK,
         bodyColor = 0xFF333333,

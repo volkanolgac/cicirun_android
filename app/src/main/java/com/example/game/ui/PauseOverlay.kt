@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.game.data.GameStorage
+import com.example.game.data.GameStrings
 import com.example.game.engine.GameEngine
 import com.example.ui.theme.CiciCardBg
 import com.example.ui.theme.CiciDark
@@ -41,11 +44,15 @@ import com.example.ui.theme.CiciYellow
 @Composable
 fun PauseOverlay(
     engine: GameEngine,
+    storage: GameStorage = engine.storage,
     modifier: Modifier = Modifier
 ) {
+    val lang = storage.language
+
     Box(
         modifier = modifier
             .fillMaxSize()
+            .safeDrawingPadding()
             .background(Color.Black.copy(alpha = 0.65f)),
         contentAlignment = Alignment.Center
     ) {
@@ -65,7 +72,7 @@ fun PauseOverlay(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "OYUN DURDURULDU",
+                    text = GameStrings.gamePaused(lang),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
@@ -85,7 +92,7 @@ fun PauseOverlay(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "Mevcut Skor",
+                                text = GameStrings.currentScore(lang),
                                 color = Color.White.copy(alpha = 0.7f),
                                 fontSize = 12.sp
                             )
@@ -98,7 +105,7 @@ fun PauseOverlay(
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "Mesafe",
+                                text = GameStrings.distance(lang),
                                 color = Color.White.copy(alpha = 0.7f),
                                 fontSize = 12.sp
                             )
@@ -137,11 +144,11 @@ fun PauseOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Devam Et",
+                                contentDescription = "Resume",
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "DEVAM ET",
+                                text = GameStrings.resume(lang),
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Black
                             )
@@ -166,11 +173,11 @@ fun PauseOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Yeniden Başla",
+                                contentDescription = "Restart",
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Yeniden Başla",
+                                text = GameStrings.playAgain(lang),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -195,11 +202,11 @@ fun PauseOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Home,
-                                contentDescription = "Ana Menü",
+                                contentDescription = "Main Menu",
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Ana Menü",
+                                text = GameStrings.mainMenu(lang),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )

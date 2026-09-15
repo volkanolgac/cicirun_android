@@ -17,15 +17,17 @@ import com.example.game.models.ObstacleType
 import com.example.game.models.Particle
 import com.example.game.models.Player
 import com.example.game.models.PowerUpActive
+import com.example.game.data.GameStrings
 import com.example.game.models.WorldTheme
 import com.example.game.models.getWorldForScore
+import com.example.game.models.getWorldForScoreOrDistance
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
 
 class GameEngine(
-    private val storage: GameStorage,
+    val storage: GameStorage,
     val audio: GameAudio
 ) {
     var status by mutableStateOf(GameStatus.MENU)
@@ -114,27 +116,47 @@ class GameEngine(
     val hasSpeedBoost: Boolean
         get() = activePowerUps.any { it.type == CollectibleType.SPEED_BOOST }
 
+    fun calculatePlayerX(width: Float, height: Float): Float {
+        val isLandscape = width > height
+        return if (isLandscape) {
+            // Yatay mod: Kay (Slide) butonunun (16dp + 148dp = 164dp) sağında, ferah bir boşlukla yer alır
+            (width * 0.22f).coerceIn(360f, 480f)
+        } else {
+            // Dikey mod: Önceki orijinal konumu (ekranın sol tarafında, ortada kalmayacak şekilde)
+            (width * 0.14f).coerceIn(100f, 240f)
+        }
+    }
+
     fun updateScreenDimensions(width: Float, height: Float) {
         worldWidth = width
         worldHeight = height
         groundY = height * 0.74f
+        // Dynamic horizontal positioning:
+        player.x = calculatePlayerX(width, height)
         if (player.isGrounded) {
             player.y = groundY - player.height
         }
     }
 
-    fun selectSkin(skin: CharacterSkin) {
+    fun selectSkin(skin: CharacterSkin): Boolean {
         if (storage.isSkinUnlocked(skin.id)) {
             selectedSkin = skin
-            storage.selectedSkinId = skin.id
+            storage.selectSkin(skin.id)
             audio.playButtonSound()
-        } else if (storage.totalCoins >= skin.unlockCoins) {
-            storage.totalCoins -= skin.unlockCoins
+            return true
+        }
+        return false
+    }
+
+    fun purchaseAndSelectSkin(skin: CharacterSkin): Boolean {
+        if (storage.spendCoins(skin.unlockCoins)) {
             storage.unlockSkin(skin.id)
             selectedSkin = skin
-            storage.selectedSkinId = skin.id
+            storage.selectSkin(skin.id)
             audio.playPowerUpSound()
+            return true
         }
+        return false
     }
 
     fun startGame() {
@@ -163,8 +185,13 @@ class GameEngine(
         nextCollectibleInterval = 1.4f
         dustTimer = 0f
 
+        val initialX = if (worldWidth > 0f && worldHeight > 0f) {
+            calculatePlayerX(worldWidth, worldHeight)
+        } else {
+            (worldWidth * 0.14f).coerceIn(100f, 240f)
+        }
         player.apply {
-            x = 100f
+            x = initialX
             width = 155f
             height = 155f
             y = groundY - 155f
@@ -264,11 +291,11 @@ class GameEngine(
         val safeDt = dt.coerceIn(0f, 0.05f)
         playTimeSeconds += safeDt
 
-        // Check 30-second difficulty escalation: display "⚡ HIZLANIYOR!" banner & trigger 3s 0.3x surge
+        // Check 30-second difficulty escalation: display speed banner & trigger 3s surge
         val currentInterval = (playTimeSeconds / 30f).toInt()
         if (currentInterval > lastRecordedSpeedInterval) {
             lastRecordedSpeedInterval = currentInterval
-            difficultyBannerText = "⚡ HIZLANIYOR!"
+            difficultyBannerText = GameStrings.speedSurge(storage.language)
             difficultyBannerTimer = 3.0f
             speedSurgeTimer = 3.0f
             audio.playSpeedUpSound()
@@ -288,12 +315,15 @@ class GameEngine(
             }
         }
 
-        // Check 1000-point world progression
-        val currentWorldIndex = (score / 1000)
+        // Check 1000-meter / 1000-point world progression (every 1000m obstacles & visuals evolve!)
+        val candidateWorld = getWorldForScoreOrDistance(score, distance)
+        val currentWorldIndex = candidateWorld.index
         if (currentWorldIndex != lastRecordedWorldIndex) {
             lastRecordedWorldIndex = currentWorldIndex
-            currentWorld = getWorldForScore(score)
-            worldBannerText = "DÜNYA ${currentWorldIndex + 1}: ${currentWorld.name}"
+            currentWorld = candidateWorld
+            val lang = storage.language
+            val worldTitle = currentWorld.localizedName(lang)
+            worldBannerText = GameStrings.worldLabel(lang, currentWorldIndex, worldTitle)
             worldBannerEmoji = currentWorld.emoji
             worldBannerTimer = 3.2f
             audio.playWorldChangeSound()

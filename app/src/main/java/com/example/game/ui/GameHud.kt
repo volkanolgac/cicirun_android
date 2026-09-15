@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +55,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.game.data.GameStorage
+import com.example.game.data.GameStrings
 import com.example.game.engine.GameEngine
 import com.example.game.models.CollectibleType
 import com.example.ui.theme.CiciCoinGold
@@ -67,8 +70,12 @@ import com.example.ui.theme.CiciYellow
 @Composable
 fun GameHud(
     engine: GameEngine,
+    storage: GameStorage = engine.storage,
     modifier: Modifier = Modifier
 ) {
+    val lang = storage.language
+    val isTr = lang != "en"
+
     val infiniteTransition = rememberInfiniteTransition(label = "hud_pulse")
     val bannerPulse by infiniteTransition.animateFloat(
         initialValue = 1.0f,
@@ -105,6 +112,7 @@ fun GameHud(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -132,7 +140,7 @@ fun GameHud(
                             fontSize = 20.sp
                         )
                         Text(
-                            text = "PUAN",
+                            text = if (isTr) "PUAN" else "SCORE",
                             color = Color.White.copy(alpha = 0.75f),
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp
@@ -220,10 +228,10 @@ fun GameHud(
             ) {
                 for (powerUp in engine.activePowerUps) {
                     val (color, name, icon) = when (powerUp.type) {
-                        CollectibleType.SHIELD -> Triple(CiciShieldBlue, "KALKAN", Icons.Default.Shield)
-                        CollectibleType.MAGNET -> Triple(CiciMagnetPurple, "MIKNATIS", Icons.Default.Star)
-                        CollectibleType.SPEED_BOOST -> Triple(CiciSpeedOrange, "HIZ GAZI 2X", Icons.Default.Bolt)
-                        else -> Triple(CiciYellow, "GÜÇ", Icons.Default.Star)
+                        CollectibleType.SHIELD -> Triple(CiciShieldBlue, if (isTr) "KALKAN" else "SHIELD", Icons.Default.Shield)
+                        CollectibleType.MAGNET -> Triple(CiciMagnetPurple, if (isTr) "MIKNATIS" else "MAGNET", Icons.Default.Star)
+                        CollectibleType.SPEED_BOOST -> Triple(CiciSpeedOrange, if (isTr) "HIZ GAZI 2X" else "SPEED 2X", Icons.Default.Bolt)
+                        else -> Triple(CiciYellow, if (isTr) "GÜÇ" else "POWER", Icons.Default.Star)
                     }
 
                     Surface(
@@ -431,7 +439,7 @@ fun GameHud(
                             horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
                             Text(
-                                text = "KAY!",
+                                text = if (isTr) "KAY!" else "SLIDE!",
                                 color = Color.White,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 20.sp,
@@ -445,7 +453,7 @@ fun GameHud(
                             )
                         }
                         Text(
-                            text = if (isSliding) "⚡ KAYIYOR!" else "ALTINDAN GEÇ",
+                            text = if (isSliding) (if (isTr) "⚡ KAYIYOR!" else "⚡ SLIDING!") else (if (isTr) "ALTINDAN GEÇ" else "DUCK UNDER"),
                             color = Color.White.copy(alpha = 0.95f),
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 10.sp
@@ -501,7 +509,7 @@ fun GameHud(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowUp,
-                                contentDescription = "Zıpla",
+                                contentDescription = if (isTr) "Zıpla" else "Jump",
                                 tint = CiciDark,
                                 modifier = Modifier.size(38.dp)
                             )
@@ -513,7 +521,7 @@ fun GameHud(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "ZIPLA!",
+                            text = if (isTr) "ZIPLA!" else "JUMP!",
                             color = CiciDark,
                             fontWeight = FontWeight.Black,
                             fontSize = 20.sp,
@@ -521,9 +529,9 @@ fun GameHud(
                         )
                         Text(
                             text = when (engine.player.jumpCount) {
-                                1 -> "⚡ 2. ZIPLA!"
-                                2 -> "🔥 3. ZIPLA!"
-                                else -> "3X ZIPLAMA"
+                                1 -> if (isTr) "⚡ 2. ZIPLA!" else "⚡ 2ND JUMP!"
+                                2 -> if (isTr) "🔥 3. ZIPLA!" else "🔥 3RD JUMP!"
+                                else -> if (isTr) "3X ZIPLAMA" else "3X JUMP"
                             },
                             color = Color(0xFF78350F),
                             fontWeight = FontWeight.ExtraBold,

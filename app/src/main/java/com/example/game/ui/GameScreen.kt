@@ -49,11 +49,11 @@ fun GameScreen(modifier: Modifier = Modifier) {
                 StartScreen(engine = engine, storage = storage)
             }
             GameStatus.PLAYING -> {
-                GameHud(engine = engine)
+                GameHud(engine = engine, storage = storage)
             }
             GameStatus.PAUSED -> {
-                GameHud(engine = engine)
-                PauseOverlay(engine = engine)
+                GameHud(engine = engine, storage = storage)
+                PauseOverlay(engine = engine, storage = storage)
             }
             GameStatus.GAME_OVER -> {
                 GameOverOverlay(engine = engine, storage = storage)

@@ -77,9 +77,59 @@ class GameAudio(private val context: Context) {
     fun playCrashSound() {
         if (!soundEnabled) return
         scope.launch {
-            playToneSweep(startFreq = 300.0, endFreq = 90.0, durationMs = 250)
+            try {
+                val sampleRate = 22050
+                val durationMs = 1000 // Exactly 1 second crash audio
+                val numSamples = (durationMs * sampleRate) / 1000
+                val buffer = ShortArray(numSamples)
+                var phase = 0.0
+                val random = java.util.Random(1337)
+
+                for (i in 0 until numSamples) {
+                    val t = i.toDouble() / sampleRate.toDouble()
+                    val progress = i.toDouble() / numSamples.toDouble()
+
+                    // Downward frequency sweep from 280 Hz down to 35 Hz
+                    val currentFreq = 280.0 * (1.0 - progress * 0.85)
+                    phase += 2.0 * Math.PI * currentFreq / sampleRate
+
+                    val sine = sin(phase)
+                    val noise = (random.nextDouble() * 2.0 - 1.0)
+
+                    // Initial punchy attack + decaying rumble tail lasting 1 second
+                    val attack = if (t < 0.015) (t / 0.015) else 1.0
+                    val decay = Math.exp(-3.2 * t)
+                    val noiseMix = if (t < 0.3) (1.0 - t / 0.3) * 0.5 else 0.08 * (1.0 - progress)
+
+                    val sampleVal = ((sine * (1.0 - noiseMix) + noise * noiseMix) * attack * decay * 32767 * 0.85).toInt()
+                    buffer[i] = sampleVal.coerceIn(-32768, 32767).toShort()
+                }
+
+                val audioTrack = AudioTrack.Builder()
+                    .setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_GAME)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    .setAudioFormat(
+                        AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .build()
+                    )
+                    .setBufferSizeInBytes(buffer.size * 2)
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .build()
+
+                audioTrack.write(buffer, 0, buffer.size)
+                audioTrack.play()
+                Thread.sleep(1050)
+                audioTrack.release()
+            } catch (_: Exception) {}
         }
-        triggerHaptic(180)
+        triggerHaptic(220)
     }
 
     fun playButtonSound() {

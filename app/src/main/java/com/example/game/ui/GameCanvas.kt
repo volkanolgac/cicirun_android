@@ -18,11 +18,13 @@ import com.example.game.models.CharacterSkin
 import com.example.game.models.CharacterSpecies
 import com.example.game.models.Collectible
 import com.example.game.models.CollectibleType
+import com.example.game.models.GameStatus
 import com.example.game.models.Obstacle
 import com.example.game.models.ObstacleType
 import com.example.game.models.Particle
 import com.example.game.models.Player
 import com.example.game.models.WorldTheme
+import com.example.game.models.WorldStyle
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -45,14 +47,14 @@ fun GameCanvas(
             height = size.height
         )
 
-        // 2. Draw Obstacles (with clear overhead clearance for sliding)
+        // 2. Draw Obstacles (with dynamic themes & shapes per world)
         for (obs in engine.obstacles) {
-            drawObstacle(obs)
+            drawObstacle(obs, engine.currentWorld)
         }
 
-        // 3. Draw Large Collectibles (Stars & Power-ups)
+        // 3. Draw Large Collectibles (Stars & Power-ups themed per world)
         for (col in engine.collectibles) {
-            drawCollectible(col)
+            drawCollectible(col, engine.currentWorld)
         }
 
         // 4. Draw Particles
@@ -66,7 +68,8 @@ fun GameCanvas(
             skin = engine.selectedSkin,
             hasShield = engine.hasShield,
             hasMagnet = engine.hasMagnet,
-            hasSpeedBoost = engine.hasSpeedBoost
+            hasSpeedBoost = engine.hasSpeedBoost,
+            isGameOver = engine.status == GameStatus.GAME_OVER
         )
 
         // 6. Draw Foreground Ground & Grass Layer styled for active World
@@ -258,7 +261,8 @@ private fun DrawScope.drawCiciPlayer(
     skin: CharacterSkin,
     hasShield: Boolean,
     hasMagnet: Boolean,
-    hasSpeedBoost: Boolean
+    hasSpeedBoost: Boolean,
+    isGameOver: Boolean = false
 ) {
     val bodyColor = Color(skin.bodyColor)
     val secColor = Color(skin.secondaryColor)
@@ -285,17 +289,30 @@ private fun DrawScope.drawCiciPlayer(
 
     rotate(degrees = player.rotation, pivot = Offset(cx, cy)) {
         when (skin.species) {
-            CharacterSpecies.CHICK -> drawChick(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.BUNNY -> drawBunny(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.CAT -> drawCat(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.PANDA -> drawPanda(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.DOG -> drawDog(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.FOX -> drawFox(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.FROG -> drawFrog(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.BEAR -> drawBear(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.PENGUIN -> drawPenguin(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.DRAGON -> drawDragon(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
-            CharacterSpecies.UNICORN -> drawUnicorn(player, bodyColor, secColor, detailColor, accentColor, cx, cy)
+            CharacterSpecies.CHICK -> drawChick(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.BUNNY -> drawBunny(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.CAT -> drawCat(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.PANDA -> drawPanda(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.DOG -> drawDog(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.FOX -> drawFox(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.FROG -> drawFrog(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.BEAR -> drawBear(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.PENGUIN -> drawPenguin(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.DRAGON -> drawDragon(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+            CharacterSpecies.UNICORN -> drawUnicorn(player, bodyColor, secColor, detailColor, accentColor, cx, cy, isGameOver)
+        }
+    }
+
+    // Dizzy stars floating above character head when game over crash occurs
+    if (isGameOver) {
+        val headX = cx
+        val headY = player.y - 18f
+        for (i in 0..2) {
+            val angle = i * (Math.PI.toFloat() * 2f / 3f)
+            val sx = headX + cos(angle) * 26f
+            val sy = headY + sin(angle) * 8f
+            drawCircle(color = Color(0xFFFFD166), radius = 5.5f, center = Offset(sx, sy))
+            drawCircle(color = Color.White, radius = 2.5f, center = Offset(sx - 1.5f, sy - 1.5f))
         }
     }
 
@@ -340,7 +357,8 @@ private fun DrawScope.drawChick(
     beakColor: Color,
     headbandColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(
@@ -366,7 +384,7 @@ private fun DrawScope.drawChick(
             close()
         }
         drawPath(beakPath, color = beakColor)
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 20f else -10f
@@ -389,7 +407,7 @@ private fun DrawScope.drawChick(
         }
         drawPath(ribbonPath, color = headbandColor)
 
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         val beakPath = Path().apply {
             moveTo(player.x + player.width - 10f, player.y + 64f)
@@ -417,7 +435,8 @@ private fun DrawScope.drawBunny(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         // Flattened bunny loaf with ears blown backwards
@@ -428,7 +447,7 @@ private fun DrawScope.drawBunny(
         drawRoundRect(color = secColor, topLeft = Offset(player.x - 14f, player.y + 7f), size = Size(74f, 11f), cornerRadius = CornerRadius(6f, 6f))
         // Nose & Eye
         drawCircle(color = detailColor, radius = 6f, center = Offset(player.x + player.width + 20f, player.y + 36f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -457,7 +476,7 @@ private fun DrawScope.drawBunny(
         drawCircle(color = secColor.copy(alpha = 0.4f), radius = 13f, center = Offset(player.x + player.width - 42f, player.y + 88f))
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Cute Pink Nose & Whiskers
         val noseX = player.x + player.width - 8f
@@ -484,7 +503,8 @@ private fun DrawScope.drawCat(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
@@ -498,7 +518,7 @@ private fun DrawScope.drawCat(
         }
         drawPath(earPath, color = bodyColor)
         drawCircle(color = detailColor, radius = 6f, center = Offset(player.x + player.width + 18f, player.y + 36f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -548,7 +568,7 @@ private fun DrawScope.drawCat(
         drawCircle(color = Color(0xFFFFD129), radius = 7f, center = Offset(player.x + player.width - 32f, player.y + 96f))
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Nose & Whiskers
         val noseX = player.x + player.width - 12f
@@ -567,13 +587,14 @@ private fun DrawScope.drawPanda(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
         drawCircle(color = secColor, radius = 16f, center = Offset(player.x + 20f, player.y + 12f))
         drawOval(color = secColor, topLeft = Offset(player.x + player.width - 18f, player.y + 14f), size = Size(36f, 26f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, color = Color.White)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, color = Color.White, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -599,7 +620,7 @@ private fun DrawScope.drawPanda(
         drawCircle(color = Color(0xFFFF70A6).copy(alpha = 0.4f), radius = 12f, center = Offset(player.x + player.width - 32f, player.y + 92f))
 
         // Anime Eye Inside Patch
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Cute Black Panda Nose & Smile
         drawOval(color = detailColor, topLeft = Offset(player.x + player.width - 16f, player.y + 72f), size = Size(16f, 12f))
@@ -622,13 +643,14 @@ private fun DrawScope.drawDog(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
         drawOval(color = secColor, topLeft = Offset(player.x + 10f, player.y + 10f), size = Size(50f, 22f))
         drawCircle(color = detailColor, radius = 7f, center = Offset(player.x + player.width + 20f, player.y + 36f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -668,7 +690,7 @@ private fun DrawScope.drawDog(
         drawCircle(color = Color(0xFFFFD129), radius = 7f, center = Offset(player.x + player.width - 34f, player.y + 98f))
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Dog Snout & Nose
         drawOval(color = Color.White.copy(alpha = 0.7f), topLeft = Offset(player.x + player.width - 24f, player.y + 64f), size = Size(36f, 30f))
@@ -684,7 +706,8 @@ private fun DrawScope.drawFox(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
@@ -698,7 +721,7 @@ private fun DrawScope.drawFox(
         }
         drawPath(ear, color = bodyColor)
         drawCircle(color = detailColor, radius = 6f, center = Offset(player.x + player.width + 20f, player.y + 36f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -761,7 +784,7 @@ private fun DrawScope.drawFox(
         drawPath(cheekFluff, color = Color.White)
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Black Fox Nose
         drawCircle(color = detailColor, radius = 7f, center = Offset(player.x + player.width + 6f, player.y + 78f))
@@ -776,12 +799,13 @@ private fun DrawScope.drawFrog(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
         drawOval(color = secColor, topLeft = Offset(player.x + 14f, player.y + 22f), size = Size(player.width * 0.6f, player.height * 0.5f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -800,7 +824,7 @@ private fun DrawScope.drawFrog(
         drawOval(color = secColor, topLeft = Offset(player.x + 24f, player.y + 54f), size = Size(player.width * 0.55f, player.height * 0.44f))
 
         // Big Anime Eye on right bulb
-        drawAnimeEye(player.x + player.width - 52f, player.y + 16f)
+        drawAnimeEye(player.x + player.width - 52f, player.y + 16f, isGameOver = isGameOver)
 
         // Left eye sparkle
         drawCircle(color = Color.White, radius = 10f, center = Offset(player.x + 48f, player.y + 16f))
@@ -830,13 +854,14 @@ private fun DrawScope.drawBear(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
         drawCircle(color = bodyColor, radius = 16f, center = Offset(player.x + 20f, player.y + 10f))
         drawCircle(color = secColor, radius = 10f, center = Offset(player.x + 20f, player.y + 10f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -856,7 +881,7 @@ private fun DrawScope.drawBear(
         drawOval(color = secColor.copy(alpha = 0.5f), topLeft = Offset(player.x + 22f, player.y + 48f), size = Size(player.width * 0.55f, player.height * 0.46f))
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Snout & Button Nose
         drawOval(color = secColor, topLeft = Offset(player.x + player.width - 28f, player.y + 64f), size = Size(38f, 32f))
@@ -872,7 +897,8 @@ private fun DrawScope.drawPenguin(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         // Belly sliding penguin!
@@ -885,7 +911,7 @@ private fun DrawScope.drawPenguin(
             close()
         }
         drawPath(beakPath, color = detailColor)
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, color = Color.White)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, color = Color.White, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -904,7 +930,7 @@ private fun DrawScope.drawPenguin(
         drawCircle(color = accentColor, radius = 9f, center = Offset(player.x + 65f, player.y + 8f))
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Penguin Beak
         val beakPath = Path().apply {
@@ -934,14 +960,15 @@ private fun DrawScope.drawDragon(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
         drawOval(color = secColor, topLeft = Offset(player.x + 14f, player.y + 22f), size = Size(player.width * 0.6f, player.height * 0.5f))
         // Horns back
         drawRoundRect(color = secColor, topLeft = Offset(player.x + 10f, player.y + 4f), size = Size(40f, 12f), cornerRadius = CornerRadius(6f, 6f))
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -982,7 +1009,7 @@ private fun DrawScope.drawDragon(
         drawOval(color = secColor.copy(alpha = 0.6f), topLeft = Offset(player.x + 22f, player.y + 48f), size = Size(player.width * 0.55f, player.height * 0.46f))
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
 
         // Dragon Wings
         val wingFlap = if (player.isGrounded) sin(player.animFrame * 2f) * 14f else -30f
@@ -1006,7 +1033,8 @@ private fun DrawScope.drawUnicorn(
     detailColor: Color,
     accentColor: Color,
     cx: Float,
-    cy: Float
+    cy: Float,
+    isGameOver: Boolean = false
 ) {
     if (player.isDucking) {
         drawOval(color = bodyColor, topLeft = Offset(player.x - 12f, player.y), size = Size(player.width + 36f, player.height))
@@ -1019,7 +1047,7 @@ private fun DrawScope.drawUnicorn(
             close()
         }
         drawPath(hornPath, color = detailColor)
-        drawDuckingEye(player.x + player.width - 4f, player.y + 18f)
+        drawDuckingEye(player.x + player.width - 4f, player.y + 18f, isGameOver = isGameOver)
         drawSlideWindLines(player.x, player.y)
     } else {
         val leg1Offset = if (player.isGrounded) sin(player.animFrame * 1.5f) * 18f else -8f
@@ -1053,19 +1081,48 @@ private fun DrawScope.drawUnicorn(
         drawCircle(color = accentColor, radius = 10f, center = Offset(player.x + player.width - 32f, player.y + 88f))
 
         // Anime Eye
-        drawAnimeEye(player.x + player.width - 50f, player.y + 42f)
+        drawAnimeEye(player.x + player.width - 50f, player.y + 42f, isGameOver = isGameOver)
     }
 }
 
+// Knocked Out 'X' Cross Eye on Collision
+private fun DrawScope.drawKnockedOutEye(eyeX: Float, eyeY: Float, color: Color = Color(0xFF1E1E24)) {
+    drawOval(color = Color.White, topLeft = Offset(eyeX - 2f, eyeY - 2f), size = Size(42f, 44f))
+    val cx = eyeX + 19f
+    val cy = eyeY + 20f
+    val arm = 13f
+
+    drawLine(
+        color = color,
+        start = Offset(cx - arm, cy - arm),
+        end = Offset(cx + arm, cy + arm),
+        strokeWidth = 6f
+    )
+    drawLine(
+        color = color,
+        start = Offset(cx - arm, cy + arm),
+        end = Offset(cx + arm, cy - arm),
+        strokeWidth = 6f
+    )
+}
+
 // Reusable Anime Eye Drawing
-private fun DrawScope.drawAnimeEye(eyeX: Float, eyeY: Float) {
+private fun DrawScope.drawAnimeEye(eyeX: Float, eyeY: Float, isGameOver: Boolean = false) {
+    if (isGameOver) {
+        drawKnockedOutEye(eyeX, eyeY)
+        return
+    }
     drawOval(color = Color.White, topLeft = Offset(eyeX, eyeY), size = Size(40f, 44f))
     drawOval(color = Color(0xFF1E1E24), topLeft = Offset(eyeX + 11f, eyeY + 6f), size = Size(27f, 35f))
     drawCircle(color = Color.White, radius = 7f, center = Offset(eyeX + 16f, eyeY + 14f))
     drawCircle(color = Color.White, radius = 3.5f, center = Offset(eyeX + 26f, eyeY + 25f))
 }
 
-private fun DrawScope.drawDuckingEye(eyeX: Float, eyeY: Float, color: Color = Color.Black) {
+private fun DrawScope.drawDuckingEye(eyeX: Float, eyeY: Float, color: Color = Color.Black, isGameOver: Boolean = false) {
+    if (isGameOver) {
+        drawKnockedOutEye(eyeX, eyeY, color = color)
+        return
+    }
     drawArc(
         color = color,
         startAngle = 0f,
@@ -1092,124 +1149,324 @@ private fun DrawScope.drawSlideWindLines(px: Float, py: Float) {
     )
 }
 
-private fun DrawScope.drawObstacle(obs: Obstacle) {
+private fun DrawScope.drawObstacle(obs: Obstacle, world: WorldTheme) {
     when (obs.type) {
         ObstacleType.LOW_ROCK -> {
-            // Low Rock with moss (120x90)
-            val rockPath = Path().apply {
-                moveTo(obs.x, obs.y + obs.height)
-                lineTo(obs.x + 12f, obs.y + 20f)
-                lineTo(obs.x + obs.width * 0.5f, obs.y)
-                lineTo(obs.x + obs.width - 15f, obs.y + 18f)
-                lineTo(obs.x + obs.width, obs.y + obs.height)
-                close()
+            when (world.style) {
+                WorldStyle.CANDY -> {
+                    // Sweet Donut / Cookie Obstacle
+                    drawCircle(
+                        color = Color(0xFF78350F),
+                        radius = obs.width * 0.42f,
+                        center = Offset(obs.x + obs.width * 0.5f, obs.y + obs.height * 0.55f)
+                    )
+                    drawOval(
+                        color = world.rockColor,
+                        topLeft = Offset(obs.x + 8f, obs.y + 12f),
+                        size = Size(obs.width - 16f, obs.height * 0.6f)
+                    )
+                    drawCircle(color = Color(0xFFFFF07C), radius = 3.5f, center = Offset(obs.x + 28f, obs.y + 24f))
+                    drawCircle(color = Color(0xFF00E5FF), radius = 3.5f, center = Offset(obs.x + obs.width * 0.5f, obs.y + 18f))
+                    drawCircle(color = Color.White, radius = 3.5f, center = Offset(obs.x + obs.width - 28f, obs.y + 26f))
+                }
+                WorldStyle.CYBER -> {
+                    // Cyber Neon Block
+                    drawRoundRect(
+                        color = world.rockColor,
+                        topLeft = Offset(obs.x, obs.y + 6f),
+                        size = Size(obs.width, obs.height - 6f),
+                        cornerRadius = CornerRadius(8f, 8f)
+                    )
+                    drawLine(
+                        color = world.rockAccentColor,
+                        start = Offset(obs.x + 6f, obs.y + 16f),
+                        end = Offset(obs.x + obs.width - 6f, obs.y + 16f),
+                        strokeWidth = 4f
+                    )
+                    drawLine(
+                        color = world.rockAccentColor,
+                        start = Offset(obs.x + obs.width * 0.5f, obs.y + 16f),
+                        end = Offset(obs.x + obs.width * 0.5f, obs.y + obs.height),
+                        strokeWidth = 4f
+                    )
+                    drawCircle(
+                        color = Color(0xFF00FFCC),
+                        radius = 6f,
+                        center = Offset(obs.x + obs.width * 0.5f, obs.y + obs.height * 0.55f)
+                    )
+                }
+                WorldStyle.MYSTIC -> {
+                    // Sharp Amethyst Crystal Shard Cluster
+                    val crystal1 = Path().apply {
+                        moveTo(obs.x + obs.width * 0.2f, obs.y + obs.height)
+                        lineTo(obs.x + obs.width * 0.35f, obs.y + 6f)
+                        lineTo(obs.x + obs.width * 0.5f, obs.y + obs.height)
+                        close()
+                    }
+                    val crystal2 = Path().apply {
+                        moveTo(obs.x + obs.width * 0.45f, obs.y + obs.height)
+                        lineTo(obs.x + obs.width * 0.65f, obs.y)
+                        lineTo(obs.x + obs.width * 0.85f, obs.y + obs.height)
+                        close()
+                    }
+                    drawPath(crystal1, color = world.rockColor)
+                    drawPath(crystal2, color = world.rockAccentColor)
+                }
+                WorldStyle.GOLDEN -> {
+                    val ingotPath = Path().apply {
+                        moveTo(obs.x + 10f, obs.y + obs.height)
+                        lineTo(obs.x + 22f, obs.y + 10f)
+                        lineTo(obs.x + obs.width - 22f, obs.y + 10f)
+                        lineTo(obs.x + obs.width - 10f, obs.y + obs.height)
+                        close()
+                    }
+                    drawPath(ingotPath, color = world.rockColor)
+                    drawOval(
+                        color = world.rockAccentColor.copy(alpha = 0.85f),
+                        topLeft = Offset(obs.x + 26f, obs.y + 14f),
+                        size = Size(obs.width - 52f, 16f)
+                    )
+                }
+                else -> {
+                    val rockPath = Path().apply {
+                        moveTo(obs.x, obs.y + obs.height)
+                        lineTo(obs.x + 12f, obs.y + 20f)
+                        lineTo(obs.x + obs.width * 0.5f, obs.y)
+                        lineTo(obs.x + obs.width - 15f, obs.y + 18f)
+                        lineTo(obs.x + obs.width, obs.y + obs.height)
+                        close()
+                    }
+                    drawPath(rockPath, color = world.rockColor)
+                    drawOval(
+                        color = world.rockAccentColor,
+                        topLeft = Offset(obs.x + 15f, obs.y + 4f),
+                        size = Size(obs.width * 0.5f, 20f)
+                    )
+                }
             }
-            drawPath(rockPath, color = Color(0xFF64748B))
-
-            // Rock Highlight & Moss
-            drawOval(
-                color = Color(0xFF4ADE80),
-                topLeft = Offset(obs.x + 15f, obs.y + 4f),
-                size = Size(obs.width * 0.5f, 20f)
-            )
         }
         ObstacleType.SPIKE_BUSH -> {
-            // Sharp Thorny Bush with spikes (135x120)
-            drawRoundRect(
-                color = Color(0xFF15803D),
-                topLeft = Offset(obs.x + 6f, obs.y + 24f),
-                size = Size(obs.width - 12f, obs.height - 24f),
-                cornerRadius = CornerRadius(14f, 14f)
-            )
-            // Red warning spikes
-            val spikeCount = 4
-            val step = obs.width / (spikeCount + 1)
-            for (i in 1..spikeCount) {
-                val sx = obs.x + i * step
-                val spikePath = Path().apply {
-                    moveTo(sx - 14f, obs.y + 26f)
-                    lineTo(sx, obs.y)
-                    lineTo(sx + 14f, obs.y + 26f)
-                    close()
+            when (world.style) {
+                WorldStyle.CANYON -> {
+                    // Desert Saguaro Cactus
+                    drawRoundRect(
+                        color = world.bushColor,
+                        topLeft = Offset(obs.x + obs.width * 0.35f, obs.y + 8f),
+                        size = Size(obs.width * 0.3f, obs.height - 8f),
+                        cornerRadius = CornerRadius(14f, 14f)
+                    )
+                    drawRoundRect(
+                        color = world.bushColor,
+                        topLeft = Offset(obs.x + 8f, obs.y + obs.height * 0.35f),
+                        size = Size(obs.width * 0.28f, obs.height * 0.22f),
+                        cornerRadius = CornerRadius(10f, 10f)
+                    )
+                    drawRoundRect(
+                        color = world.bushColor,
+                        topLeft = Offset(obs.x + 8f, obs.y + obs.height * 0.15f),
+                        size = Size(obs.width * 0.16f, obs.height * 0.3f),
+                        cornerRadius = CornerRadius(10f, 10f)
+                    )
+                    drawRoundRect(
+                        color = world.bushColor,
+                        topLeft = Offset(obs.x + obs.width * 0.62f, obs.y + obs.height * 0.45f),
+                        size = Size(obs.width * 0.3f, obs.height * 0.22f),
+                        cornerRadius = CornerRadius(10f, 10f)
+                    )
+                    drawRoundRect(
+                        color = world.bushColor,
+                        topLeft = Offset(obs.x + obs.width * 0.76f, obs.y + obs.height * 0.22f),
+                        size = Size(obs.width * 0.16f, obs.height * 0.32f),
+                        cornerRadius = CornerRadius(10f, 10f)
+                    )
+                    drawCircle(
+                        color = world.spikeColor,
+                        radius = 8f,
+                        center = Offset(obs.x + obs.width * 0.5f, obs.y + 6f)
+                    )
                 }
-                drawPath(spikePath, color = Color(0xFFDC2626))
+                WorldStyle.CYBER -> {
+                    // High-Voltage Cyber Neon Spikes / Electric Pylon
+                    drawRoundRect(
+                        color = world.bushColor,
+                        topLeft = Offset(obs.x + 10f, obs.y + 20f),
+                        size = Size(obs.width - 20f, obs.height - 20f),
+                        cornerRadius = CornerRadius(10f, 10f)
+                    )
+                    for (i in 1..4) {
+                        val sx = obs.x + i * (obs.width / 5)
+                        drawLine(
+                            color = world.spikeColor,
+                            start = Offset(sx, obs.y + 22f),
+                            end = Offset(sx, obs.y),
+                            strokeWidth = 6f
+                        )
+                        drawCircle(color = Color.White, radius = 4f, center = Offset(sx, obs.y))
+                    }
+                }
+                else -> {
+                    drawRoundRect(
+                        color = world.bushColor,
+                        topLeft = Offset(obs.x + 6f, obs.y + 24f),
+                        size = Size(obs.width - 12f, obs.height - 24f),
+                        cornerRadius = CornerRadius(14f, 14f)
+                    )
+                    val spikeCount = 4
+                    val step = obs.width / (spikeCount + 1)
+                    for (i in 1..spikeCount) {
+                        val sx = obs.x + i * step
+                        val spikePath = Path().apply {
+                            moveTo(sx - 14f, obs.y + 26f)
+                            lineTo(sx, obs.y)
+                            lineTo(sx + 14f, obs.y + 26f)
+                            close()
+                        }
+                        drawPath(spikePath, color = world.spikeColor)
+                    }
+                }
             }
         }
         ObstacleType.TALL_TREE -> {
-            // Tree Stump (105x180)
-            drawRoundRect(
-                color = Color(0xFF78350F),
-                topLeft = Offset(obs.x + 12f, obs.y + 32f),
-                size = Size(obs.width - 24f, obs.height - 32f),
-                cornerRadius = CornerRadius(12f, 12f)
-            )
-            // Foliage Crown
-            drawOval(
-                color = Color(0xFF16A34A),
-                topLeft = Offset(obs.x, obs.y),
-                size = Size(obs.width, 68f)
-            )
+            when (world.style) {
+                WorldStyle.CANDY -> {
+                    // Peppermint Striped Candy Cane Trunk (Must jump over!)
+                    drawRoundRect(
+                        color = Color.White,
+                        topLeft = Offset(obs.x + 12f, obs.y + 32f),
+                        size = Size(obs.width - 24f, obs.height - 32f),
+                        cornerRadius = CornerRadius(12f, 12f)
+                    )
+                    for (i in 0..4) {
+                        drawLine(
+                            color = world.treeTrunkColor,
+                            start = Offset(obs.x + 12f, obs.y + 40f + i * 28f),
+                            end = Offset(obs.x + obs.width - 12f, obs.y + 58f + i * 28f),
+                            strokeWidth = 8f
+                        )
+                    }
+                    drawOval(
+                        color = world.treeFoliageColor,
+                        topLeft = Offset(obs.x - 6f, obs.y),
+                        size = Size(obs.width + 12f, 72f)
+                    )
+                }
+                WorldStyle.CYBER -> {
+                    // Steel Cyber Grid Transmitter
+                    drawRoundRect(
+                        color = world.treeTrunkColor,
+                        topLeft = Offset(obs.x + 16f, obs.y + 32f),
+                        size = Size(obs.width - 32f, obs.height - 32f),
+                        cornerRadius = CornerRadius(8f, 8f)
+                    )
+                    drawRoundRect(
+                        color = world.treeFoliageColor.copy(alpha = 0.75f),
+                        topLeft = Offset(obs.x, obs.y),
+                        size = Size(obs.width, 68f),
+                        cornerRadius = CornerRadius(16f, 16f)
+                    )
+                    drawCircle(
+                        color = Color.White,
+                        radius = 8f,
+                        center = Offset(obs.x + obs.width * 0.5f, obs.y + 34f)
+                    )
+                }
+                else -> {
+                    drawRoundRect(
+                        color = world.treeTrunkColor,
+                        topLeft = Offset(obs.x + 12f, obs.y + 32f),
+                        size = Size(obs.width - 24f, obs.height - 32f),
+                        cornerRadius = CornerRadius(12f, 12f)
+                    )
+                    drawOval(
+                        color = world.treeFoliageColor,
+                        topLeft = Offset(obs.x, obs.y),
+                        size = Size(obs.width, 68f)
+                    )
+                }
+            }
         }
         ObstacleType.FLYING_BEE -> {
-            // Flying Bee (125x95)
             val bx = obs.x
             val by = obs.y
 
-            // Flapping Wings
-            drawOval(
-                color = Color.White.copy(alpha = 0.85f),
-                topLeft = Offset(bx + 24f, by - 20f),
-                size = Size(36f, 26f)
-            )
-            // Yellow Body
-            drawOval(
-                color = Color(0xFFFBBF24),
-                topLeft = Offset(bx, by),
-                size = Size(obs.width, obs.height)
-            )
-            // Black Stripes
-            drawRect(
-                color = Color(0xFF1E1E24),
-                topLeft = Offset(bx + 28f, by + 4f),
-                size = Size(12f, obs.height - 8f)
-            )
-            drawRect(
-                color = Color(0xFF1E1E24),
-                topLeft = Offset(bx + 52f, by + 4f),
-                size = Size(12f, obs.height - 8f)
-            )
-            // Stinger
-            val stingerPath = Path().apply {
-                moveTo(bx + 3f, by + obs.height * 0.5f - 9f)
-                lineTo(bx - 15f, by + obs.height * 0.5f)
-                lineTo(bx + 3f, by + obs.height * 0.5f + 9f)
-                close()
-            }
-            drawPath(stingerPath, color = Color(0xFF1E1E24))
+            when (world.style) {
+                WorldStyle.CYBER -> {
+                    // Flying Cyber Surveillance Drone
+                    drawCircle(
+                        color = world.flyerWingColor,
+                        radius = 16f,
+                        center = Offset(bx + 18f, by + obs.height * 0.5f)
+                    )
+                    drawRoundRect(
+                        color = world.flyerBodyColor,
+                        topLeft = Offset(bx, by),
+                        size = Size(obs.width, obs.height),
+                        cornerRadius = CornerRadius(16f, 16f)
+                    )
+                    drawCircle(
+                        color = Color(0xFFFF0055),
+                        radius = 10f,
+                        center = Offset(bx + obs.width - 20f, by + obs.height * 0.5f)
+                    )
+                }
+                else -> {
+                    // Flapping Wings
+                    drawOval(
+                        color = world.flyerWingColor.copy(alpha = 0.85f),
+                        topLeft = Offset(bx + 24f, by - 20f),
+                        size = Size(36f, 26f)
+                    )
+                    // Themed Body
+                    drawOval(
+                        color = world.flyerBodyColor,
+                        topLeft = Offset(bx, by),
+                        size = Size(obs.width, obs.height)
+                    )
+                    // Black Stripes
+                    drawRect(
+                        color = Color(0xFF1E1E24),
+                        topLeft = Offset(bx + 28f, by + 4f),
+                        size = Size(12f, obs.height - 8f)
+                    )
+                    drawRect(
+                        color = Color(0xFF1E1E24),
+                        topLeft = Offset(bx + 52f, by + 4f),
+                        size = Size(12f, obs.height - 8f)
+                    )
+                    // Stinger
+                    val stingerPath = Path().apply {
+                        moveTo(bx + 3f, by + obs.height * 0.5f - 9f)
+                        lineTo(bx - 15f, by + obs.height * 0.5f)
+                        lineTo(bx + 3f, by + obs.height * 0.5f + 9f)
+                        close()
+                    }
+                    drawPath(stingerPath, color = Color(0xFF1E1E24))
 
-            // Eyes
-            drawCircle(
-                color = Color.White,
-                radius = 9f,
-                center = Offset(bx + obs.width - 20f, by + 24f)
-            )
-            drawCircle(
-                color = Color.Black,
-                radius = 4.5f,
-                center = Offset(bx + obs.width - 17f, by + 24f)
-            )
+                    // Eyes
+                    drawCircle(
+                        color = Color.White,
+                        radius = 9f,
+                        center = Offset(bx + obs.width - 20f, by + 24f)
+                    )
+                    drawCircle(
+                        color = Color.Black,
+                        radius = 4.5f,
+                        center = Offset(bx + obs.width - 17f, by + 24f)
+                    )
+                }
+            }
         }
         ObstacleType.HIGH_CLOUD -> {
-            // Floating Thunder Cloud
+            // Floating Cloud adapted to world day/night
+            val cloudColor = if (world.isNight) Color(0xFF1E293B) else Color(0xFF475569)
             drawOval(
-                color = Color(0xFF475569),
+                color = cloudColor,
                 topLeft = Offset(obs.x, obs.y),
                 size = Size(obs.width, obs.height)
             )
         }
         ObstacleType.OVERHEAD_BARRIER -> {
-            // Overhead Hanging Wooden Barrier (165x140 - Must duck/slide under!)
-            // Hanging Support Chains from Screen Top
+            // Overhead Hanging Barrier (165x140 - Must duck/slide under!)
             drawLine(
                 color = Color(0xFF4B5563),
                 start = Offset(obs.x + 20f, 0f),
@@ -1223,25 +1480,25 @@ private fun DrawScope.drawObstacle(obs: Obstacle) {
                 strokeWidth = 6f
             )
 
-            // Wooden Sign Box
+            // Barrier Sign Box themed per world
             drawRoundRect(
-                color = Color(0xFF713F12),
+                color = world.barrierColor,
                 topLeft = Offset(obs.x, obs.y),
                 size = Size(obs.width, obs.height),
                 cornerRadius = CornerRadius(12f, 12f)
             )
 
-            // Red Warning Hazard Stripes
+            // Warning Hazard Stripes
             for (i in 0..5) {
                 drawLine(
-                    color = Color(0xFFEF4444),
+                    color = world.barrierStripeColor,
                     start = Offset(obs.x + 12f + i * 24f, obs.y + 12f),
                     end = Offset(obs.x + 32f + i * 24f, obs.y + obs.height - 12f),
                     strokeWidth = 9f
                 )
             }
 
-            // Duck Arrow Indicator (Showing kid players they can slide under!)
+            // Duck Arrow Indicator
             val arrowPath = Path().apply {
                 val acx = obs.x + obs.width / 2
                 val acy = obs.y + obs.height + 8f
@@ -1255,23 +1512,23 @@ private fun DrawScope.drawObstacle(obs: Obstacle) {
     }
 }
 
-private fun DrawScope.drawCollectible(col: Collectible) {
+private fun DrawScope.drawCollectible(col: Collectible, world: WorldTheme) {
     val cy = col.y + sin(col.bobOffset) * 6f
     val cx = col.x
     val size = col.size
 
     when (col.type) {
         CollectibleType.STAR_COIN -> {
-            // Outer golden aura glow
+            // Outer golden/world aura glow
             drawCircle(
-                color = Color(0xFFFEF08A).copy(alpha = 0.6f),
-                radius = size * 0.8f,
+                color = world.coinGlowColor.copy(alpha = 0.65f),
+                radius = size * 0.82f,
                 center = Offset(cx + size / 2, cy + size / 2)
             )
-            // Golden Coin Disk
+            // Coin Disk Gradient themed per world
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFFFFF07C), Color(0xFFF59E0B), Color(0xFFD97706)),
+                    colors = world.coinColors,
                     center = Offset(cx + size / 2, cy + size / 2),
                     radius = size / 2
                 ),
@@ -1293,10 +1550,10 @@ private fun DrawScope.drawCollectible(col: Collectible) {
             drawPath(starPath, color = Color.White)
         }
         CollectibleType.SHIELD -> {
-            // Cyan Bubble Orb
+            // Bubble Orb themed per world
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF90E0EF), Color(0xFF00B4D8), Color(0xFF0077B6)),
+                    colors = world.shieldColors,
                     center = Offset(cx + size / 2, cy + size / 2),
                     radius = size * 0.65f
                 ),
@@ -1315,10 +1572,10 @@ private fun DrawScope.drawCollectible(col: Collectible) {
             drawPath(shieldPath, color = Color.White)
         }
         CollectibleType.MAGNET -> {
-            // Purple Orb
+            // Magnet Orb themed per world
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFFE0AAFF), Color(0xFF9D4EDD), Color(0xFF5A189A)),
+                    colors = world.magnetColors,
                     center = Offset(cx + size / 2, cy + size / 2),
                     radius = size * 0.65f
                 ),
@@ -1337,10 +1594,10 @@ private fun DrawScope.drawCollectible(col: Collectible) {
             )
         }
         CollectibleType.SPEED_BOOST -> {
-            // Orange Flame Orb
+            // Speed Flame Orb themed per world
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFFFF9E00), Color(0xFFFF5400), Color(0xFFDC2F02)),
+                    colors = world.speedColors,
                     center = Offset(cx + size / 2, cy + size / 2),
                     radius = size * 0.65f
                 ),
